@@ -5,6 +5,8 @@ import pygame
 import time
 from pygame.mixer import music
 
+soundfileDirectory = "C:\Users\Michael\Desktop\University of Iowa Piano Samples\WAV\AlignedFiles2" +"\\"
+
 pygame.init()
 screen = pygame.display.set_mode((400,400))
 
@@ -14,13 +16,9 @@ notes = {"C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5, "F#": 6, "G": 7, "G#"
 # For accessing note names
 inverseNotes = {v: k for k, v in notes.items()}
 
-beatDivisions = {0:8, 1:4, 2:2, 3:1.5, 4:1, 5:0.75, 6:0.5, 7:0.25, 8:0.125, 9:0.0625, 10:0.03125}
+beatDivisions = {0:1/32, 1:1/16, 2:1/8, 3:1/4, 4:1/2, 5:1, 6:2}
 
 
-pianoNotes = {0:"Piano.mf.C3", 1:"Piano.mf.Db3", 2:"Piano.mf.D3", 3:"Piano.mf.Eb3", 4:"Piano.mf.E3", 5:"Piano.mf.F3", 6:"Piano.mf.Gb3",
-             7:"Piano.mf.G3", 8:"Piano.mf.Ab3", 9:"Piano.mf.A3", 10:"Piano.mf.Bb3", 11:"Piano.mf.B3", 
-             12:"Piano.mf.C4", 13:"Piano.mf.Db4", 14:"Piano.mf.D4", 15:"Piano.mf.Eb4", 16:"Piano.mf.E4", 17:"Piano.mf.F4", 18:"Piano.mf.Gb4",
-             19:"Piano.mf.G4", 20:"Piano.mf.Ab4", 21:"Piano.mf.A4", 22:"Piano.mf.Bb4", 23:"Piano.mf.B4"}
 
 #         1                 2                3        4               5                6                  7
 chordTypes = {
@@ -102,10 +100,7 @@ def generatePermMatrix(size):
         numbers.remove(index)
         
     permMatrix = matrix(permArray)
-    return permMatrix
-    
-    
- 
+    return permMatrix 
     
 # Generates a square Matrix (array) such that the values of the rows and columns all add up to 1. 
 # This will be used to probababilistically determine the next chord in the song, based on the previous 3 chords. 
@@ -113,7 +108,7 @@ def generatePermMatrix(size):
 # In order to do this, Max informed me that you need n(n-1)/2 nxn permutation matrices (a single 1 in each column/row and 0 otherwise). Take a linear combination of them
 # such that the coefficients SUM to one (normalize them), where the coefficients are generated randomly, and the resulting matrix will be the kind that we require.      
      
-def generateProbMatrix(size):
+def generateCumulativeArray(size):
     
     global identityMatrix
     
@@ -153,131 +148,125 @@ def generateProbMatrix(size):
         for j in range(size):
             SUM += probArray[i][j]         
             cumulativeArray[i][j] += SUM
-    cumulativeMatrix = matrix(cumulativeArray)
     
-    return probMatrix, cumulativeMatrix
+    return cumulativeArray
 
-# Generate the next chord using the next chord probability matrix. 
-        
-def generateNextChord(prevChord, cumulativeMatrix):
-    # Generate a random number between 0 and 1. 
-    # For each row in the probability matrix (the current note), each element represents the probability of a particular note being chosen next. 
-    # Those probabilities can be interpreted as slots, and the randomly generated number will fall into those slots with the probability
-    # distribution specified by the matrix. 
+def transitionToNextState(prevState):
     
-    prevChordRoot = prevChord.notes[0]    
     
-    randNumber = float(randrange(0, 1000))/1000
-    cumulativeArray = array(cumulativeMatrix)
     
-    size = cumulativeArray.shape[0]
     
-    # Iterate through the cumulative matrix and find which "slot" the random number falls in: that will determine the next chord
-    nextChordRoot = 0
+    nextCumulateiveArray_noteLength = generateCumulativeArray(6)
+    nextCumulativeArray_noteValue = generateCumulativeArray(83)
     
-    for j in range(size):
-        
-        if randNumber <= cumulativeArray[prevChordRoot][j] and randNumber > ( cumulativeArray[prevChordRoot][j-1] or 0): 
-            nextChordRoot = j
-            break
+    prevNote = prevState.
     
-    # Randomly select the type of the next chord
-    nextChordType = choice(chordTypes.keys())
     
-    nextChord = Chord(nextChordRoot, nextChordType)
-    return nextChord  
-
-def generateNextNote(prevNote, currentChord, noteValueCumulativeMatrix, noteLengthCumulativeMatrix):
-    
-    # Current Chord may or may not be equal to the previous chord
-    
-    global beatDivisions
-    
-    prevNoteIndex = prevNote.parentChord.notes.index(prevNote.value)
+def applyStochasticTransition(prevValue, nextCumulativeArray):     
     
     # The random seed determining where we fall in the probability matrix
     randNumber = float(randrange(0, 1000))/1000
-    noteValueCumulativeArray = array(noteValueCumulativeMatrix)
-    noteLengthCumulativeArray = array(noteLengthCumulativeMatrix)
     
-       
-    # Iterate through the cumulative matrix and find which "slot" the random number falls in: that will determine the next chord
-    nextNoteValue = 0 # Placeholder
+    # Determine next note value
+    nextValue = 0 # Placeholder
     
-    for j in range(noteValueCumulativeArray.shape[0]):
-        
-        if randNumber <= noteValueCumulativeArray[prevNoteIndex][j] and randNumber > ( noteValueCumulativeArray[prevNoteIndex][j-1] or 0): 
-            nextNoteValue = currentChord.notes[j]
-            break
-        
-    nextNoteValue = 
-    
-    nextNoteLength = 0 # Placeholder
-    
-    for j in range(noteLengthCumulativeArray.shape[0]):
-        
-        if randNumber <= noteLengthCumulativeArray[prevNoteValue][j] and randNumber > ( noteLengthCumulativeArray[prevNoteValue][j-1] or 0): 
-            nextNoteLength = beatDivisions[j]
-            break
-    
-    nextNote = Note(nextNoteValue, nextNoteLength, nextNotePosition)
+    for j in range(nextCumulativeArray_noteValue.shape[0]):
                 
-            
+        if randNumber <= noteValueCumulativeArray[prevValue][j] and randNumber > ( noteValueCumulativeArray[prevValue][j-1] or 0): 
+            nextValue = j
+            break
+        
+    
 def main():    
     
     global beatDivisions
     
     initialize()    
    
-    nextChordProbMatrix, nextChordCumulativeMatrix = generateProbMatrix(12)
-    nextNoteLengthProbMatrix, nextNoteLengthCumulativeMatrix = generateProbMatrix(len(beatDivisions))
-    
-    # The next note value will be picked from the notes contained in the chord, so we need to generate a different prob matrix for the different possible # of notes in
-    # a chord (between 3 and 6). When transitioning to a new, bigger chord we can use the prob matrix for that bigger chord (there will be some extra values in the domain
-    # but that's okay). When transitioning to a new, smaller chord, use the previous bigger chord otherwise you will get an index error. 
-    
-    nextNoteValueProbMatrices = []
-    nextNoteValueCumulativeMatrices = []
-    
-    for i in range(3, 7):
-        nextNoteValueProbMatrices[i], nextNoteValueCumulativeMatrices[i] = generateProbMatrix(i)    
-    
-    firstChord = Chord(0, "Major")
-    firstNote = Note(0, 1)
-    
-    prevChord = generateNextChord(firstChord, nextChordCumulativeMatrix)
-    
-    prevNote = generateNextNote(firstNote, prevChord, nextNoteValueCumulativeMatrices[len(prevChord.notes)], nextNoteLengthCumulativeMatrix)
-    for i in range(10): 
-        newChord = generateNextChord(prevChord, nextChordCumulativeMatrix)        
-        newNote = generateNextNote(prevNote, newChord, nextNoteValueCumulativeMatrices[len(prevChord.notes)], nextNoteLengthCumulativeMatrix)
-        print newChord.notes, newChord.rootNoteName, newChord.type
-        
-        
-        prevChord = newChord
-    
-       
-    
    
     runDisplay()
-   
+
+
+class state: 
+    
+    # State contains all the relevant variables at time = t. 
+    
+    def __init__(self, t, chord, instruments):
+        
+        self.instruments = instruments
+        self.t = t
+        self.notes = notes
+        self.chord = chord
+        
+    def updateState(self):
+        for instrument in self.instruments: 
+            instrument.play()
+            
+            
+class Instrument: 
+    
+    # Contains the names of the soundfiles used for that instrument, and a boolean variables which says whether the instrument is currently playing or not, and
+    # a list of the notes it is currently playing. 
+    
+    def __init__(self, instrumentType, t):
+        self.instrumentType = instrumentType
+        self.t = t
+        self.playing = False
+        self.notesBeingPlayed = []
+        
+        if self.instrumentType == "Piano": 
+            self.notes = {0:"Piano.mf.C1", 1:"Piano.mf.Db1", 2:"Piano.mf.D1", 3:"Piano.mf.Eb1", 4:"Piano.mf.E1", 5:"Piano.mf.F1", 6:"Piano.mf.Gb1",
+             7:"Piano.mf.G1", 8:"Piano.mf.Ab1", 9:"Piano.mf.A1", 10:"Piano.mf.Bb1", 11:"Piano.mf.B1", 
+             12:"Piano.mf.C2", 13:"Piano.mf.Db2", 14:"Piano.mf.D2", 15:"Piano.mf.Eb2", 16:"Piano.mf.E2", 17:"Piano.mf.F2", 18:"Piano.mf.Gb2",
+             19:"Piano.mf.G2", 20:"Piano.mf.Ab2", 21:"Piano.mf.A2", 22:"Piano.mf.Bb2", 23:"Piano.mf.B2", 
+             24:"Piano.mf.C3", 25:"Piano.mf.Db3", 26:"Piano.mf.D3", 27:"Piano.mf.Eb3", 28:"Piano.mf.E3", 29:"Piano.mf.F3", 30:"Piano.mf.Gb3",
+             31:"Piano.mf.G3", 32:"Piano.mf.Ab3", 33:"Piano.mf.A3", 34:"Piano.mf.Bb3", 35:"Piano.mf.B3", 
+             36:"Piano.mf.C4", 37:"Piano.mf.Db4", 38:"Piano.mf.D4", 39:"Piano.mf.Eb4", 40:"Piano.mf.E4", 41:"Piano.mf.F4", 42:"Piano.mf.Gb4",
+             43:"Piano.mf.G4", 44:"Piano.mf.Ab4", 45:"Piano.mf.A4", 46:"Piano.mf.Bb4", 47:"Piano.mf.B4", 
+             48:"Piano.mf.C5", 49:"Piano.mf.Db5", 50:"Piano.mf.D5", 51:"Piano.mf.Eb5", 52:"Piano.mf.E5", 53:"Piano.mf.F5", 54:"Piano.mf.Gb5",
+             55:"Piano.mf.G5", 56:"Piano.mf.Ab5", 57:"Piano.mf.A5", 58:"Piano.mf.Bb5", 59:"Piano.mf.B5", 
+             60:"Piano.mf.C6", 61:"Piano.mf.Db6", 62:"Piano.mf.D6", 63:"Piano.mf.Eb6", 64:"Piano.mf.E6", 65:"Piano.mf.F6", 66:"Piano.mf.Gb6",
+             67:"Piano.mf.G6", 68:"Piano.mf.Ab6", 69:"Piano.mf.A6", 70:"Piano.mf.Bb6", 71:"Piano.mf.B6", 
+             72:"Piano.mf.C7", 73:"Piano.mf.Db7", 74:"Piano.mf.D7", 75:"Piano.mf.Eb7", 76:"Piano.mf.E7", 77:"Piano.mf.F7", 78:"Piano.pp.Gb7",
+             79:"Piano.mf.G7", 80:"Piano.mf.Ab7", 81:"Piano.mf.A7", 82:"Piano.mf.Bb7", 83:"Piano.mf.B7"}
+    def playNotes(self, notes):
+        
+        for note in notes: 
+            note.play()
+        self.notesBeingPlayed.append(notes)
+        
+        
+
 class Note: 
-    def __init__(self, value, length, parentChord):
+    
+    # Remaining time: counts down the time left until the note expires (as the result of its length)
+    
+    def __init__(self, value, length, parentInstrument):
         self.value = value
-        self.length = length        
-        self.parentChord = parentChord        
-        self.positionInChord = value - parentChord.notes[0]
-        
+        self.length = length
+        self.parentInstrument = parentInstrument
+        self.remainingTime = 0   
+        self.playing = False   
+            
     def play(self):    
-        global channels        
+        global channels, soundfileDirectory  
         
-        sounds = pygame.mixer.Sound("C:\Users\Michael\Desktop\University of Iowa Piano Samples\WAV\AlignedFiles2" +"\\" + pianoNotes[note] +" render 001.wav")             
+        self.remainingTime = length
+        self.playing = True
+    
+        
+        sound = pygame.mixer.Sound(soundfileDirectory + self.parentInstrument.notes[self.value] +" render 001.wav")             
         
         channels[0].stop()           
         channels[0].play(sound)
+               
         
-        # Note length determines how long we sleep here
-        time.sleep(self.length)
+    def updateNote(self):
+        if self.remainingTime - 1/32 > 0: 
+                  
+            self.remainingTime -= 1/32
+        else: 
+            self.playing = False
 
 class Chord:
     global notes
@@ -294,8 +283,7 @@ class Chord:
         self.relativeNotes = chordTypes[chordType]
         
         for step in self.relativeNotes: 
-            self.notes.append(self.rootNote + step)
-    
+            self.notes.append(self.rootNote + step)   
                
             
 def refreshScreen():
